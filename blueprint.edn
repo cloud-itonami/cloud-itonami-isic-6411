@@ -1,4 +1,4 @@
-{:itonami.blueprint/id "cloud-itonami-6411"
+{:itonami.blueprint/id "cloud-itonami-isic-6411"
  :itonami.blueprint/name "Central banking"
  :itonami.blueprint/isic-rev5 "6411"
  :itonami.blueprint/domain :finance/central-banking

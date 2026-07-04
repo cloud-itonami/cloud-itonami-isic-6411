@@ -2,7 +2,7 @@
 
 ## Classification
 
-- Repository: `cloud-itonami-6411`
+- Repository: `cloud-itonami-isic-6411`
 - ISIC Rev.5: `6411`
 - Activity: central banking -- currency issuance, reserve-account administration, and interbank settlement operations for member/commercial banks
 - Social impact: financial inclusion, data sovereignty, transparent audit

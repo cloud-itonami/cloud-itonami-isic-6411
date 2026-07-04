@@ -1,4 +1,4 @@
-# cloud-itonami-6411
+# cloud-itonami-isic-6411
 
 Open Business Blueprint for **ISIC Rev.5 6411**: Central banking.
 

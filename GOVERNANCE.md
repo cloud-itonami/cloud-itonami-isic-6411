@@ -1,6 +1,6 @@
 # Governance
 
-`cloud-itonami-6411` is an OSS open-business blueprint for central banking -- currency issuance, reserve-account administration, and interbank settlement operations for member/commercial banks.
+`cloud-itonami-isic-6411` is an OSS open-business blueprint for central banking -- currency issuance, reserve-account administration, and interbank settlement operations for member/commercial banks.
 Governance covers both the capability layer and the operator model.
 
 ## Maintainers
