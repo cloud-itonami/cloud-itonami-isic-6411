@@ -106,7 +106,22 @@
                :proposed-settlement-amount 1000 :available-reserve-balance 500
                :correspondent-due-diligence-unresolved? false
                :reserve-account-opened? false :settlement-batch-released? false
-               :jurisdiction "JPN" :status :intake}}})
+               :jurisdiction "JPN" :status :intake}
+    ;; member-6: clean on every LOCAL field (no
+    ;; `:correspondent-due-diligence-unresolved?`) but its
+    ;; `:member-name` is EXACTLY cloud-itonami-isic-8291's own demo
+    ;; sanctions-flagged company's `:legal-name` ("Northwind Capital
+    ;; Holdings Ltd (demo)", `co-200` in `dossier.store/demo-data`).
+    ;; Exists purely to prove `reserve.corporate-intel`'s
+    ;; cross-reference into 8291 catches a correspondent bank this
+    ;; repo's local-only due-diligence check alone would silently
+    ;; clear -- see `test/reserve/corporate_intel_test.clj`.
+    "member-6" {:id "member-6" :member-name "Northwind Capital Holdings Ltd (demo)"
+               :reserve-ratio 5 :minimum-reserve-ratio-required 2
+               :proposed-settlement-amount 100 :available-reserve-balance 500
+               :correspondent-due-diligence-unresolved? false
+               :reserve-account-opened? false :settlement-batch-released? false
+               :jurisdiction "GBR" :status :intake}}})
 
 ;; ----------------------------- shared commit logic -----------------------------
 

@@ -23,7 +23,7 @@
       (is (= 1000 (:proposed-settlement-amount (store/member s "member-5"))))
       (is (false? (:reserve-account-opened? (store/member s "member-1"))))
       (is (false? (:settlement-batch-released? (store/member s "member-1"))))
-      (is (= ["member-1" "member-2" "member-3" "member-4" "member-5"]
+      (is (= ["member-1" "member-2" "member-3" "member-4" "member-5" "member-6"]
              (mapv :id (store/all-members s))))
       (is (nil? (store/duediligence-screen-of s "member-1")))
       (is (nil? (store/account-of s "member-1")))

@@ -79,12 +79,37 @@
        :stake      nil
        :confidence 0.9})))
 
+(def default-corporate-intel-screen
+  "No-op corporate-intelligence cross-reference: always 'nothing on
+  file'. This is the default so every existing caller of
+  `screen-duediligence`/`infer`/`mock-advisor` keeps its exact prior
+  behavior unless it explicitly wires in
+  `reserve.corporate-intel/screen-company` (or an equivalent). Not
+  required from this namespace directly -- keeping the dependency
+  optional at the reserveadvisor level, injected only by whoever
+  builds the advisor."
+  (constantly {:flags {}}))
+
 (defn- screen-duediligence
   "Correspondent-banking due-diligence screening draft.
   `:correspondent-due-diligence-unresolved?` on the member record
   injects the failure mode: the Central Bank Reserve Governor must
-  HOLD, un-overridably, on any unresolved concern."
-  [db {:keys [subject]}]
+  HOLD, un-overridably, on any unresolved concern.
+
+  `screen-fn` (member name -> corporate-intel result, see
+  `reserve.corporate-intel/screen-company`) is consulted ONLY once the
+  local flag is otherwise clean -- it can turn a would-be :resolved
+  into :unresolved, but a local unresolved flag is decided first,
+  cheaply, without depending on an external actor at all. Unlike a
+  KYC-style screen with an identification-document concept, this
+  member-level screen has only two verdicts
+  (`:correspondent-due-diligence-unresolved?` true/false) -- there is
+  no middle 'incomplete' state here, so ANY non-clean signal from 8291
+  (a definitive sanctions-flag hit on the correspondent bank itself,
+  8291's own pending human review, or 8291's query being held/
+  rejected) lands on the SAME `true` verdict a local flag would
+  produce -- never silently `false`."
+  [db {:keys [subject]} screen-fn]
   (let [m (store/member db subject)]
     (cond
       (nil? m)
@@ -102,13 +127,43 @@
        :confidence 0.95}
 
       :else
-      {:summary    (str (:member-name m) ": デューデリジェンスは解決済み")
-       :rationale  "デューデリジェンス・スクリーニング完了。"
-       :cites      [:duediligence-check]
-       :effect     :duediligence/set
-       :value      {:member-id subject :correspondent-due-diligence-unresolved? false}
-       :stake      nil
-       :confidence 0.9})))
+      (let [ci (screen-fn (:member-name m))]
+        (cond
+          (:pending-human-review? ci)
+          {:summary    (str (:member-name m) ": corporate-intelligence 照会が人手レビュー待ち")
+           :rationale  "cloud-itonami-isic-8291 側の DisclosureGovernor が high-stakes escalate 中(コルレス銀行自身の制裁フラグ疑い)。確定するまで未解決として扱う(この会員金融機関の語彙に中間状態は無い)。"
+           :cites      [:duediligence-check :corporate-intelligence]
+           :effect     :duediligence/set
+           :value      {:member-id subject :correspondent-due-diligence-unresolved? true}
+           :stake      nil
+           :confidence 0.5}
+
+          (:held? ci)
+          {:summary    (str (:member-name m) ": corporate-intelligence 照会が拒否された(契約/設定の問題)")
+           :rationale  (str "cloud-itonami-isic-8291 の DisclosureGovernor が本テナントの照会を拒否: " (pr-str (:reason ci)))
+           :cites      [:duediligence-check :corporate-intelligence]
+           :effect     :duediligence/set
+           :value      {:member-id subject :correspondent-due-diligence-unresolved? true}
+           :stake      nil
+           :confidence 0.4}
+
+          (get-in ci [:flags :sanctions?])
+          {:summary    (str (:member-name m) ": corporate-intelligence 照会でコルレス銀行自身の制裁フラグを検出")
+           :rationale  "cloud-itonami-isic-8291 の企業照会でこのコルレス銀行自身に制裁フラグが確認された。人手確認とホールドが必須。"
+           :cites      [:duediligence-check :corporate-intelligence]
+           :effect     :duediligence/set
+           :value      {:member-id subject :correspondent-due-diligence-unresolved? true}
+           :stake      nil
+           :confidence 0.9}
+
+          :else
+          {:summary    (str (:member-name m) ": デューデリジェンスは解決済み")
+           :rationale  "デューデリジェンス・スクリーニング完了 + corporate-intelligence 照会クリア(または未収載)。"
+           :cites      [:duediligence-check :corporate-intelligence]
+           :effect     :duediligence/set
+           :value      {:member-id subject :correspondent-due-diligence-unresolved? false}
+           :stake      nil
+           :confidence 0.9})))))
 
 (defn- propose-reserve-account-opening
   "Draft the actual RESERVE-ACCOUNT-OPENING action -- opening a real
@@ -160,16 +215,20 @@
 
 (defn infer
   "Route a request to the right proposal generator.
-  request: {:op kw :subject id ...op-specific...}"
-  [db {:keys [op] :as request}]
-  (case op
-    :member/intake                       (normalize-intake db request)
-    :account/verify                      (verify-account db request)
-    :duediligence/screen                 (screen-duediligence db request)
-    :actuation/open-reserve-account       (propose-reserve-account-opening db request)
-    :actuation/release-settlement-batch  (propose-settlement-batch-release db request)
-    {:summary "未対応の操作" :rationale (str op) :cites []
-     :effect :noop :stake nil :confidence 0.0}))
+  request: {:op kw :subject id ...op-specific...}
+  `screen-fn` (default: `default-corporate-intel-screen`, a no-op) is
+  only consulted by `:duediligence/screen`, once the local flag is
+  otherwise clean."
+  ([db request] (infer db request default-corporate-intel-screen))
+  ([db {:keys [op] :as request} screen-fn]
+   (case op
+     :member/intake                       (normalize-intake db request)
+     :account/verify                      (verify-account db request)
+     :duediligence/screen                 (screen-duediligence db request screen-fn)
+     :actuation/open-reserve-account       (propose-reserve-account-opening db request)
+     :actuation/release-settlement-batch  (propose-settlement-batch-release db request)
+     {:summary "未対応の操作" :rationale (str op) :cites []
+      :effect :noop :stake nil :confidence 0.0})))
 
 ;; ----------------------------- Advisor protocol -----------------------------
 
@@ -177,8 +236,16 @@
   (-advise [advisor store request] "store + request -> proposal map"))
 
 (defn mock-advisor
-  "The deterministic advisor (the `infer` logic above). Default everywhere."
-  [] (reify Advisor (-advise [_ st req] (infer st req))))
+  "The deterministic advisor (the `infer` logic above). Default everywhere.
+  opts:
+    :corporate-intel-screen -- member name -> corporate-intel result (see
+      `reserve.corporate-intel/screen-company`). Default: no-op (never
+      changes a screen-duediligence verdict), so `(mock-advisor)` with
+      no args keeps every existing caller's exact prior behavior."
+  ([] (mock-advisor {}))
+  ([{:keys [corporate-intel-screen]
+     :or   {corporate-intel-screen default-corporate-intel-screen}}]
+   (reify Advisor (-advise [_ st req] (infer st req corporate-intel-screen)))))
 
 (def ^:private system-prompt
   (str "あなたは中央銀行業務(準備預金口座開設・銀行間決済)の実行エージェントの"

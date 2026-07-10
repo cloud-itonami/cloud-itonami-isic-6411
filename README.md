@@ -232,11 +232,12 @@ in scope.
 | `src/reserve/registry.cljc` | Reserve-account-opening + settlement-batch-release draft records, plus `reserve-ratio-insufficient?` (honest TENTH MINIMUM-threshold instance) and `settlement-batch-exceeds-available-reserve-balance?` (honest ELEVENTH MAXIMUM-ceiling instance), each gating a DIFFERENT one of this actor's two actuations, not claimed as new |
 | `src/reserve/facts.cljc` | Per-jurisdiction reserve-requirement/correspondent-banking catalog with an official spec-basis citation per entry, honest coverage reporting |
 | `src/reserve/reserveadvisor.cljc` | **ReserveOps-LLM** -- `mock-advisor` ‖ `llm-advisor`; intake/account-verification/due-diligence-screening/reserve-account-opening/settlement-batch-release proposals |
+| `src/reserve/corporate_intel.cljc` | Optional cross-reference into [`cloud-itonami-isic-8291`](https://github.com/cloud-itonami/cloud-itonami-isic-8291)'s `:disclosure/query` op -- resolves a correspondent bank's own company profile by name and feeds its sourced `:flags` into `screen-duediligence` via `reserveadvisor/mock-advisor`'s `:corporate-intel-screen` opt (default: no-op, so every existing caller keeps its exact prior behavior). This repo's binary `:correspondent-due-diligence-unresolved?` vocabulary has no middle "incomplete" state, so a real sanctions hit, 8291's own pending-human-review escalation, and a held/misconfigured 8291 query all collapse onto the SAME `true` verdict -- an immediate, un-overridable HARD hold, more conservative than the 3-way repos, matching `cloud-itonami-isic-6419`'s/`6420`'s own binary-collapse precedent |
 | `src/reserve/governor.cljc` | **Central Bank Reserve Governor** -- 5 HARD checks (spec-basis · evidence-incomplete · correspondent-due-diligence-unresolved, unconditional evaluation, GENUINELY NEW, the 54th grounding of this discipline · reserve-ratio-insufficient, honest MINIMUM-threshold reuse · settlement-batch-exceeds-available-reserve-balance, honest MAXIMUM-ceiling reuse) + already-account-opened guard + already-settlement-released guard + 1 soft (confidence/actuation gate) |
 | `src/reserve/phase.cljc` | **Phase 0→3** -- read-only → assisted intake → assisted verify → supervised (both actuations always human; member intake is the ONLY auto-eligible op, no direct capital risk) |
 | `src/reserve/operation.cljc` | **OperationActor** -- langgraph-clj StateGraph |
 | `src/reserve/sim.cljc` | demo driver |
-| `test/reserve/*_test.clj` | governor contract · phase invariants · store parity · registry conformance · facts coverage |
+| `test/reserve/*_test.clj` | governor contract · phase invariants · store parity · registry conformance · facts coverage · corporate-intelligence integration |
 
 ## Business-process coverage (honest)
 
