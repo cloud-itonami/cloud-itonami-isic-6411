@@ -117,10 +117,16 @@
   establish, informed by `cloud-itonami-isic-6492`'s status-lifecycle
   bug (ADR-2607071320)."
   (:require [reserve.facts :as facts]
+            [reserve.kernels.gate :as gate]
             [reserve.registry :as registry]
             [reserve.store :as store]))
 
-(def confidence-floor 0.6)
+(def confidence-floor
+  "Documented threshold. The DECIDING copy is
+  `reserve.kernels.gate/confidence-floor-x100` (integer x100 in the
+  safety kernel); this def is kept for callers/docs and pinned equal
+  by `reserve.kernels.gate-test`."
+  0.6)
 
 (def high-stakes
   "Stakes grave enough to always require a human, even when clean.
@@ -133,6 +139,12 @@
   actuation shape (`3600`/`6190` remain the only negative-actuation
   exceptions)."
   #{:actuation/open-reserve-account :actuation/release-settlement-batch})
+
+(defn- confidence->x100
+  "Host bridge (façade-side, not kernel vocabulary): scale a 0.0..1.0
+  advisor confidence to the kernel's integer x100 wire code."
+  [c]
+  (Math/round (* 100.0 (double c))))
 
 ;; ----------------------------- checks -----------------------------
 
@@ -232,23 +244,58 @@
   Returns {:ok? bool :violations [..] :confidence c :escalate? bool
   :high-stakes? bool :hard? bool}."
   [request _context proposal st]
-  (let [hard (into []
-                   (concat (spec-basis-violations request proposal)
-                           (evidence-incomplete-violations request st)
-                           (correspondent-banking-due-diligence-unresolved-violations request proposal st)
-                           (reserve-ratio-insufficient-violations request st)
-                           (settlement-batch-exceeds-available-reserve-balance-violations request st)
-                           (already-account-opened-violations request st)
-                           (already-settlement-released-violations request st)))
+  (let [spec-v  (spec-basis-violations request proposal)
+        evid-v  (evidence-incomplete-violations request st)
+        dd-v    (correspondent-banking-due-diligence-unresolved-violations request proposal st)
+        ratio-v (reserve-ratio-insufficient-violations request st)
+        batch-v (settlement-batch-exceeds-available-reserve-balance-violations request st)
+        opnd-v  (already-account-opened-violations request st)
+        rlsd-v  (already-settlement-released-violations request st)
+        hard (into [] (concat spec-v evid-v dd-v ratio-v batch-v opnd-v rlsd-v))
         conf (:confidence proposal 0.0)
-        low? (< conf confidence-floor)
         stakes? (boolean (high-stakes (:stake proposal)))
-        hard? (boolean (seq hard))]
-    {:ok?          (and (not hard?) (not low?) (not stakes?))
+        ;; Numeric bridges: the kernel re-decides both ground-truth
+        ;; comparisons from the member's raw integer fields (ratio <
+        ;; minimum; balance < amount — the EXACT strict comparisons
+        ;; `reserve.registry`'s predicates make, on the same values,
+        ;; so kernel and violation list can never disagree). The
+        ;; `applicable` flags restate the registry's op scoping AND
+        ;; its `number?` guard (a missing field is no-violation,
+        ;; exactly as before).
+        ratio-op? (= (:op request) :actuation/open-reserve-account)
+        batch-op? (= (:op request) :actuation/release-settlement-batch)
+        m (when (or ratio-op? batch-op?) (store/member st (:subject request)))
+        ratio? (and ratio-op?
+                    (number? (:reserve-ratio m))
+                    (number? (:minimum-reserve-ratio-required m)))
+        batch? (and batch-op?
+                    (number? (:proposed-settlement-amount m))
+                    (number? (:available-reserve-balance m)))
+        ;; The decision itself is delegated to the safety kernel
+        ;; (reserve.kernels.gate, integer-coded fail-closed core); this
+        ;; façade only gathers evidence (violation lists with
+        ;; human-readable details) and maps codes back to keywords.
+        ;; Kernel is stricter than the old inline logic on ONE case by
+        ;; design: an out-of-range confidence (< 0 or > 1.0) now
+        ;; escalates instead of counting as high confidence.
+        code (gate/verdict-code (if (seq spec-v) 1 0)
+                                (if (seq evid-v) 1 0)
+                                (if (seq dd-v) 1 0)
+                                (if ratio? 1 0)
+                                (if ratio? (:reserve-ratio m) 0)
+                                (if ratio? (:minimum-reserve-ratio-required m) 0)
+                                (if batch? 1 0)
+                                (if batch? (:proposed-settlement-amount m) 0)
+                                (if batch? (:available-reserve-balance m) 0)
+                                (if (seq opnd-v) 1 0)
+                                (if (seq rlsd-v) 1 0)
+                                (confidence->x100 conf)
+                                (if stakes? 1 0))]
+    {:ok?          (= 0 code)
      :violations   hard
      :confidence   conf
-     :hard?        hard?
-     :escalate?    (and (not hard?) (or low? stakes?))
+     :hard?        (= 2 code)
+     :escalate?    (= 1 code)
      :high-stakes? stakes?}))
 
 (defn hold-fact

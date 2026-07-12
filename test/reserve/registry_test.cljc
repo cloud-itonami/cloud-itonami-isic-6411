@@ -50,9 +50,9 @@
     (is (= (get-in result ["record" "immutable"]) true))))
 
 (deftest account-opening-validation-rules
-  (is (thrown? Exception (r/register-reserve-account-opening "" "JPN" 0)))
-  (is (thrown? Exception (r/register-reserve-account-opening "member-1" "" 0)))
-  (is (thrown? Exception (r/register-reserve-account-opening "member-1" "JPN" -1))))
+  (is (thrown? #?(:clj Exception :cljs js/Error) (r/register-reserve-account-opening "" "JPN" 0)))
+  (is (thrown? #?(:clj Exception :cljs js/Error) (r/register-reserve-account-opening "member-1" "" 0)))
+  (is (thrown? #?(:clj Exception :cljs js/Error) (r/register-reserve-account-opening "member-1" "JPN" -1))))
 
 ;; ----------------------------- register-settlement-batch-release -----------------------------
 
@@ -70,9 +70,9 @@
     (is (= (get-in result ["record" "immutable"]) true))))
 
 (deftest settlement-release-validation-rules
-  (is (thrown? Exception (r/register-settlement-batch-release "" "JPN" 0)))
-  (is (thrown? Exception (r/register-settlement-batch-release "member-1" "" 0)))
-  (is (thrown? Exception (r/register-settlement-batch-release "member-1" "JPN" -1))))
+  (is (thrown? #?(:clj Exception :cljs js/Error) (r/register-settlement-batch-release "" "JPN" 0)))
+  (is (thrown? #?(:clj Exception :cljs js/Error) (r/register-settlement-batch-release "member-1" "" 0)))
+  (is (thrown? #?(:clj Exception :cljs js/Error) (r/register-settlement-batch-release "member-1" "JPN" -1))))
 
 (deftest history-is-append-only
   (let [c1 (r/register-reserve-account-opening "member-1" "JPN" 0)
