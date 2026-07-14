@@ -1,0 +1,24 @@
+(ns cloud-itonami-reserve-ratio)
+
+(defn reserve-ratio-sufficient? [reserve-ratio minimum-reserve-ratio-required]
+  (>= reserve-ratio minimum-reserve-ratio-required))
+
+;; ABI: `main` stays 0-arity (the compiler rejects a parameterized main --
+;; :main-arity, see kotoba-lang/kotoba's compile-wasm-expr) and reads its
+;; two real i32 inputs out of the exported linear memory instead, at fixed
+;; byte offsets a host writes into before calling main() (same convention
+;; as cloud-itonami-isic-6492's affordability.kotoba, cloud-itonami-isic-
+;; 6511's underwriting_decision.kotoba and cloud-itonami-isic-6512's
+;; claim_coverage.kotoba):
+;;   offset 0: reserve-ratio                    (i32, integer percentage
+;;                                                points -- the SAME units
+;;                                                the member record itself
+;;                                                uses, per reserve.
+;;                                                kernels.gate's ns
+;;                                                docstring)
+;;   offset 4: minimum-reserve-ratio-required    (i32, same units)
+;; Returns 1 (sufficient -- reserve-ratio >= minimum-reserve-ratio-required,
+;; i.e. NOT a reserve-ratio-insufficient violation) or 0 (insufficient --
+;; a HARD `:reserve-ratio-insufficient` violation per reserve.governor).
+(defn main []
+  (reserve-ratio-sufficient? (mem-i32-at 0 0) (mem-i32-at 0 4)))

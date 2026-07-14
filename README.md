@@ -238,6 +238,7 @@ in scope.
 | `src/reserve/operation.cljc` | **OperationActor** -- langgraph-clj StateGraph |
 | `src/reserve/sim.cljc` | demo driver |
 | `test/reserve/*_test.clj` | governor contract · phase invariants · store parity · registry conformance · facts coverage · corporate-intelligence integration |
+| `wasm/reserve_ratio.kotoba` | `.kotoba`-subset port of `reserve.registry/reserve-ratio-insufficient?`, compiled to real WASM via `kotoba wasm emit` and hosted under `kototama.tender` (`test/wasm/reserve_ratio_test.clj`) -- see `wasm/README.md` |
 
 ## Business-process coverage (honest)
 
