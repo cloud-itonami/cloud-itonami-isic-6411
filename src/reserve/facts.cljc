@@ -61,7 +61,66 @@
           :required-evidence ["Identitätsprüfungsprotokoll (member-identity-verification-record)"
                               "Reservekonto-Antragsprotokoll (reserve-account-application-record)"
                               "Korrespondenzbank-Sorgfaltspflichtprotokoll (correspondent-due-diligence-record)"
-                              "Abwicklungsgenehmigungsprotokoll (settlement-authorization-record)"]}})
+                              "Abwicklungsgenehmigungsprotokoll (settlement-authorization-record)"]}
+   ;; SAU -- 5th jurisdiction (added 2026-07-23). Verified directly from
+   ;; sama.gov.sa this session (`About/Pages/default.aspx` and
+   ;; `About/Pages/SAMAHistory.aspx` were live-fetchable; the deeper
+   ;; Saudi Central Bank Law detail below comes from SAMA's own 57th
+   ;; Annual Report PDF, whose live URL now 500s -- fetched instead via
+   ;; the Internet Archive Wayback Machine capture
+   ;; `web.archive.org/web/20221116202912id_/https://www.sama.gov.sa/en-US/EconomicReports/AnnualReport/ANNUAL_Report_57th_2021.pdf`,
+   ;; per this fleet's bot-detection/unreachable-source fallback policy --
+   ;; this is a plain HTTP 500 on an otherwise-legitimate first-party SAMA
+   ;; document, not a bot-detection challenge).
+   ;;
+   ;; Confirmed facts (verbatim from the Annual Report, SAMA's own text):
+   ;; "Approval of the Saudi Central Bank Law and changing the name of the
+   ;; Saudi Arabian Monetary Authority to the Saudi Central Bank" (2020
+   ;; reforms list) -- the old name is officially superseded/retired:
+   ;; "Under this law, 'Saudi Central Bank' shall replace the name 'Saudi
+   ;; Arabian Monetary Authority' wherever mentioned in related laws,
+   ;; regulations, instructions and orders with all rights and
+   ;; obligations, and shall maintain the same abbreviation 'SAMA'."
+   ;; Decree: "as per Royal Decree no. (36/M) dated November 26, 2020
+   ;; (Rabi II 11, 1442H), Saudi Central Bank's Law was approved" (financial
+   ;; statements' subsequent-events note); a separate passage in the same
+   ;; report gives the Custodian of the Two Holy Mosques' royal approval
+   ;; date as "November 24, 2020 (Rabi' II 9, 1442H)" -- both dates are
+   ;; reproduced here verbatim rather than silently picked, since SAMA's
+   ;; own report does not reconcile the 2-day gap between them.
+   ;; Mandate: "the Saudi Central Bank Law sets out the objectives of SAMA
+   ;; as follows: 1. Maintaining monetary stability. 2. Promoting the
+   ;; stability of, and boosting confidence in, the financial sector.
+   ;; 3. Supporting economic growth." and "the onus of developing and
+   ;; managing the monetary policy and choosing its instruments and
+   ;; procedures shall be on SAMA." This mission wording is corroborated
+   ;; on the LIVE site: the About-page breadcrumb link's title attribute
+   ;; (fetched this session) reads "The Saudi Central Bank (SAMA) aims to
+   ;; maintain monetary stability, support the financial sector's
+   ;; stability and promote trust therein, as well as Support economic
+   ;; growth."
+   ;;
+   ;; HONEST GAPS (left absent/qualified, not guessed):
+   ;; - No specific internal article number of the Saudi Central Bank Law
+   ;;   text itself was located this session (only the Royal Decree
+   ;;   number/date above) -- :legal-basis below cites the decree, not an
+   ;;   article, unlike e.g. USA's "12 CFR Part 204" citation.
+   ;; - The SAR/USD exchange-rate peg is explicitly described by SAMA
+   ;;   itself as a *policy*, not a distinct statutory provision: "SAMA
+   ;;   has also continued to implement a fixed exchange rate policy of
+   ;;   the Saudi riyal against the US dollar at SAR 3.75 per one US
+   ;;   dollar" and "SAMA maintained its US dollar-pegged monetary
+   ;;   policy..." -- so it is recorded in :national-spec as policy
+   ;;   context only, never asserted as a citable legal-basis item.
+   "SAU" {:name "Saudi Arabia"
+          :owner-authority "Saudi Central Bank (SAMA) -- renamed by law from Saudi Arabian Monetary Authority in 2020"
+          :legal-basis "Saudi Central Bank Law, approved by Royal Decree no. (36/M) dated 26 November 2020 (Rabi' II 11, 1442H; Custodian of the Two Holy Mosques' royal approval reported elsewhere in the same source as 24 November 2020 / Rabi' II 9, 1442H) -- SAMA succeeds the former Saudi Arabian Monetary Authority in all rights/obligations and holds sole responsibility for developing/managing monetary policy and choosing its instruments and procedures"
+          :national-spec "Reserve-account eligibility, correspondent-banking due-diligence and settlement-authorization requirements for member/commercial banks under SAMA supervision; the SAR/USD exchange rate (SAR 3.75 = 1 USD) is maintained as SAMA policy, not a separate statutory peg provision"
+          :provenance "https://www.sama.gov.sa/en-US/About/Pages/default.aspx"
+          :required-evidence ["Member identity-verification record"
+                              "Reserve-account application record"
+                              "Correspondent-due-diligence record"
+                              "Settlement-authorization record"]}})
 
 (defn spec-basis
   "The jurisdiction's requirement map, or nil -- nil means NO spec-basis,
