@@ -47,10 +47,9 @@
   always a query over an immutable log -- the audit trail a member
   bank trusting a central bank needs, and the evidence a central bank
   needs if an opening or release decision is later disputed."
-  (:require #?(:clj  [clojure.edn :as edn]
-               :cljs [cljs.reader :as edn])
-            [reserve.registry :as registry]
-            [langchain.db :as d]))
+  (:require [reserve.registry :as registry]
+            [langchain.db :as d]
+            [langchain-store.core :as ls]))
 
 (defprotocol Store
   (member [s id])
@@ -219,18 +218,15 @@
   Compound values (account/duediligence-screen payloads, ledger
   facts, account-opening/settlement-release records) are stored as
   EDN strings so `langchain.db` doesn't expand them into sub-entities
-  -- the same convention every sibling actor's store uses."
-  {:member/id                {:db/unique :db.unique/identity}
-   :account/member-id         {:db/unique :db.unique/identity}
-   :duediligence/member-id      {:db/unique :db.unique/identity}
-   :ledger/seq                     {:db/unique :db.unique/identity}
-   :account-opening/seq              {:db/unique :db.unique/identity}
-   :settlement-release/seq              {:db/unique :db.unique/identity}
-   :account-sequence/jurisdiction          {:db/unique :db.unique/identity}
-   :settlement-sequence/jurisdiction          {:db/unique :db.unique/identity}})
-
-(defn- enc [v] (pr-str v))
-(defn- dec* [s] (when s (edn/read-string s)))
+  -- the same convention every sibling actor's store uses. The
+  identity-schema builder, EDN-blob codec and seq-keyed event-log
+  read/append are the shared kotoba-lang/langchain-store machinery
+  (ADR-2607141600) -- the seam ~190 actors hand-roll; this store keeps
+  only its domain wiring."
+  (ls/identity-schema
+   [:member/id :account/member-id :duediligence/member-id
+    :ledger/seq :account-opening/seq :settlement-release/seq
+    :account-sequence/jurisdiction :settlement-sequence/jurisdiction]))
 
 (defn- member->tx [{:keys [id member-name reserve-ratio minimum-reserve-ratio-required
                           proposed-settlement-amount available-reserve-balance
@@ -280,25 +276,16 @@
          (map #(pull->member (d/pull (d/db conn) member-pull [:member/id %])))
          (sort-by :id)))
   (duediligence-screen-of [_ id]
-    (dec* (d/q '[:find ?p . :in $ ?mid
+    (ls/dec* (d/q '[:find ?p . :in $ ?mid
                 :where [?k :duediligence/member-id ?mid] [?k :duediligence/payload ?p]]
               (d/db conn) id)))
   (account-of [_ member-id]
-    (dec* (d/q '[:find ?p . :in $ ?mid
+    (ls/dec* (d/q '[:find ?p . :in $ ?mid
                 :where [?a :account/member-id ?mid] [?a :account/payload ?p]]
               (d/db conn) member-id)))
-  (ledger [_]
-    (->> (d/q '[:find ?s ?f :where [?e :ledger/seq ?s] [?e :ledger/fact ?f]] (d/db conn))
-         (sort-by first)
-         (mapv (comp dec* second))))
-  (reserve-account-history [_]
-    (->> (d/q '[:find ?s ?r :where [?e :account-opening/seq ?s] [?e :account-opening/record ?r]] (d/db conn))
-         (sort-by first)
-         (mapv (comp dec* second))))
-  (settlement-batch-history [_]
-    (->> (d/q '[:find ?s ?r :where [?e :settlement-release/seq ?s] [?e :settlement-release/record ?r]] (d/db conn))
-         (sort-by first)
-         (mapv (comp dec* second))))
+  (ledger [_] (ls/read-stream conn :ledger/seq :ledger/fact))
+  (reserve-account-history [_] (ls/read-stream conn :account-opening/seq :account-opening/record))
+  (settlement-batch-history [_] (ls/read-stream conn :settlement-release/seq :settlement-release/record))
   (next-account-sequence [_ jurisdiction]
     (or (d/q '[:find ?n . :in $ ?j
               :where [?e :account-sequence/jurisdiction ?j] [?e :account-sequence/next ?n]]
@@ -319,10 +306,10 @@
       (d/transact! conn [(member->tx value)])
 
       :account/set
-      (d/transact! conn [{:account/member-id (first path) :account/payload (enc payload)}])
+      (d/transact! conn [{:account/member-id (first path) :account/payload (ls/enc payload)}])
 
       :duediligence/set
-      (d/transact! conn [{:duediligence/member-id (first path) :duediligence/payload (enc payload)}])
+      (d/transact! conn [{:duediligence/member-id (first path) :duediligence/payload (ls/enc payload)}])
 
       :member/mark-account-opened
       (let [member-id (first path)
@@ -332,7 +319,7 @@
         (d/transact! conn
                      [(member->tx (assoc member-patch :id member-id))
                       {:account-sequence/jurisdiction jurisdiction :account-sequence/next next-n}
-                      {:account-opening/seq (count (reserve-account-history s)) :account-opening/record (enc (get result "record"))}])
+                      {:account-opening/seq (count (reserve-account-history s)) :account-opening/record (ls/enc (get result "record"))}])
         result)
 
       :member/mark-settlement-released
@@ -343,12 +330,12 @@
         (d/transact! conn
                      [(member->tx (assoc member-patch :id member-id))
                       {:settlement-sequence/jurisdiction jurisdiction :settlement-sequence/next next-n}
-                      {:settlement-release/seq (count (settlement-batch-history s)) :settlement-release/record (enc (get result "record"))}])
+                      {:settlement-release/seq (count (settlement-batch-history s)) :settlement-release/record (ls/enc (get result "record"))}])
         result)
       nil)
     s)
   (append-ledger! [s fact]
-    (d/transact! conn [{:ledger/seq (count (ledger s)) :ledger/fact (enc fact)}])
+    (ls/append-blob! conn :ledger/seq :ledger/fact (count (ledger s)) fact)
     fact)
   (with-members [s members]
     (when (seq members) (d/transact! conn (mapv member->tx (vals members)))) s))
