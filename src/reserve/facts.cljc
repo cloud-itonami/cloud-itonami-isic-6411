@@ -120,6 +120,93 @@
           :required-evidence ["Member identity-verification record"
                               "Reserve-account application record"
                               "Correspondent-due-diligence record"
+                              "Settlement-authorization record"]}
+   ;; IND -- 6th jurisdiction (added 2026-07-23). Verified directly from
+   ;; rbi.org.in this session: `Scripts/BS_ViewMasterDirections.aspx?id=13160`
+   ;; ("Reserve Bank of India (Commercial Banks - Cash Reserve Ratio and
+   ;; Statutory Liquidity Ratio) Directions, 2025") and `...?id=13141`
+   ;; ("Reserve Bank of India (Commercial Banks - Know Your Customer)
+   ;; Directions, 2025") were both live-fetchable in full. The Reserve Bank
+   ;; of India Act, 1934 itself is officially linked from the live
+   ;; `rbi.org.in/Scripts/Act.aspx` page to
+   ;; `rbidocs.rbi.org.in/rdocs/Publications/PDFs/RBIA1934170510.PDF`, but
+   ;; that `rbidocs.rbi.org.in` host returned a genuine bot-detection
+   ;; challenge this session on two independent fetch attempts (HTTP 200
+   ;; `text/html` F5/Shape JS-challenge content bearing `TS...` cookies, in
+   ;; place of the PDF -- not a transient error). Per this fleet's
+   ;; bot-detection fallback policy, the Act text was instead verified via
+   ;; the Internet Archive Wayback Machine's own captured `application/pdf`
+   ;; snapshot of that exact URL
+   ;; (`web.archive.org/web/20220503132748id_/https://rbidocs.rbi.org.in/rdocs/Publications/PDFs/RBIA1934170510.pdf`,
+   ;; confirmed via the Wayback CDX API as a genuine HTTP 200
+   ;; `application/pdf` capture, not a challenge page, then read with
+   ;; `pdftotext`) -- no browser automation or challenge-solving was used.
+   ;;
+   ;; Confirmed facts (verbatim from the sources above):
+   ;; RBI Act 1934, Section 42(1) (from the Wayback-archived Act PDF):
+   ;; "42. Cash reserves of scheduled banks to be kept with the Bank. (1)
+   ;; Every bank included in the Second Schedule shall maintain with the
+   ;; Bank an average daily balance the amount of which shall not be less
+   ;; than [such per cent. of the total of the demand and time liabilities
+   ;; in India of such bank as shown in the return referred to in
+   ;; sub-section (2), as the Bank may from time to time, having regard to
+   ;; the needs of securing the monetary stability in the country, notify
+   ;; in the Gazette of India]".
+   ;; The live CRR/SLR Master Direction (id=13160, RBI/DOR/2025-26/150 dated
+   ;; 28 November 2025, updated as on 19 June 2026) restates the same
+   ;; authority and gives the operative numeric requirement: "7. Every bank
+   ;; shall maintain in India by way of cash reserve, a sum equivalent to
+   ;; such percent of the total of its NDTL in India... as the Reserve Bank
+   ;; in terms of Section 42(1) of the RBI Act, 1934... may specify, by
+   ;; notification in the Official Gazette" and "9. Every bank shall
+   ;; maintain in India with the Reserve Bank, an average daily balance, the
+   ;; amount of which shall not be less than 3.75 per cent, 3.5 per cent,
+   ;; 3.25 per cent and 3.0 per cent of its NDTL... effective from the
+   ;; reporting fortnight beginning September 6, October 4, November 1 and
+   ;; November 29, 2025, respectively" -- i.e. CRR = 3.00% of NDTL from that
+   ;; last step onward, independently corroborated by the live rbi.org.in
+   ;; homepage banner fetched this session, which read "CRR: 3.00%" "as at
+   ;; July 22, 2026". Per this catalog's own discipline (rates change
+   ;; periodically by RBI notification, never a fixed law), this 3.00%
+   ;; figure is recorded below as a snapshot AS OF 2026-07-23, not asserted
+   ;; as permanent.
+   ;; The live KYC Master Direction (id=13141, RBI/DOR/2025-26/169 dated 28
+   ;; November 2025, updated as on 29 December 2025), paragraph 73
+   ;; "Correspondent Banking", reads in part: "The bank shall have a policy
+   ;; approved by its Boards, or by a committee headed by the Chairman / CEO
+   ;; / MD, to lay down parameters for approving cross-border correspondent
+   ;; banking and other similar relationships... (1) The bank shall gather
+   ;; sufficient information about a respondent bank to understand fully the
+   ;; nature of the respondent bank's business... The bank shall assess the
+   ;; respondent bank's AML / CFT controls... (3) The bank shall obtain the
+   ;; prior approval from senior management for establishing new
+   ;; correspondent banking relationships... (7) The bank shall not enter
+   ;; into or continue a correspondent relationship with a shell bank." --
+   ;; issued "in exercise of the powers conferred by sections 35A of the
+   ;; Banking Regulation Act, 1949... Rule 9(14) of the Prevention of
+   ;; Money-Laundering (Maintenance of Records) Rules, 2005".
+   ;;
+   ;; HONEST GAPS (left absent/qualified, not guessed):
+   ;; - The CRR percentage is a periodically-renotified rate, not a fixed
+   ;;   figure written into the Act itself (Section 42(1) only fixes the
+   ;;   notify-by-Gazette MECHANISM) -- :national-spec below records the
+   ;;   observed rate as a dated snapshot, matching this catalog's own
+   ;;   stated discipline for rates that change by notification.
+   ;; - The RBI Act PDF's own filename/print-date marker
+   ;;   ("RBIA1934170510") indicates a May-2010 consolidation; Section 42's
+   ;;   substantive text was last amended in 2006/2007 per the PDF's own
+   ;;   footnotes (RBI (Amendment) Act, 2006, w.e.f. 1-4-2007 / 9-1-2007),
+   ;;   so the 2010 consolidation still carries the current Section 42(1)
+   ;;   text, but no more-recent official consolidated republication was
+   ;;   located or needed this session.
+   "IND" {:name "India"
+          :owner-authority "Reserve Bank of India (RBI)"
+          :legal-basis "Reserve Bank of India Act, 1934 -- Section 42(1) (Cash Reserve Ratio) -- Reserve Bank of India (Commercial Banks - Know Your Customer) Directions, 2025 (RBI/DOR/2025-26/169), paragraph 73 (Correspondent Banking due diligence), issued under Section 35A of the Banking Regulation Act, 1949 and Rule 9(14) of the Prevention of Money-Laundering (Maintenance of Records) Rules, 2005"
+          :national-spec "Cash Reserve Ratio (CRR) maintenance for scheduled/commercial banks -- average daily balance as a percent of Net Demand and Time Liabilities (NDTL), rate set periodically by RBI Gazette notification under Section 42(1); observed at 3.00% of NDTL as of 2026-07-23, not a fixed statutory figure -- and correspondent-banking due-diligence requirements for cross-border correspondent relationships (respondent-bank AML/CFT-controls assessment, senior-management approval for new relationships, no shell-bank relationships)"
+          :provenance "https://www.rbi.org.in/Scripts/BS_ViewMasterDirections.aspx"
+          :required-evidence ["Member identity-verification record"
+                              "Reserve-account application record"
+                              "Correspondent-due-diligence record"
                               "Settlement-authorization record"]}})
 
 (defn spec-basis
