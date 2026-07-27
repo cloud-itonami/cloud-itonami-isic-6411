@@ -214,7 +214,17 @@
   [{:keys [op subject]} st]
   (when (= op :actuation/release-settlement-batch)
     (let [m (store/member st subject)]
-      (when (registry/settlement-batch-exceeds-available-reserve-balance? m)
+      (cond
+        ;; Either figure missing or non-numeric: the limit cannot be
+        ;; evaluated, so it is not "within limits". This used to fall
+        ;; through as "not over" and proceed.
+        ;; Only when the entity EXISTS: a missing entity is a different
+        ;; violation that another gate owns, and firing here would mask it.
+        (and m (not (registry/settlement-batch-exceeds-available-reserve-balance-checkable? m)))
+        [{:rule :settlement-batch-exceeds-available-reserve-balance
+          :detail "上限判定に必要な値が記録されていない -- 限度内と断定できないため進めない"}]
+
+        (registry/settlement-batch-exceeds-available-reserve-balance? m)
         [{:rule :settlement-batch-exceeds-available-reserve-balance
           :detail (str subject " の提案決済額(" (:proposed-settlement-amount m)
                       ")が利用可能準備残高(" (:available-reserve-balance m) ")を超過")}]))))

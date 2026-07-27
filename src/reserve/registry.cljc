@@ -103,6 +103,17 @@
   (and (number? proposed-settlement-amount) (number? available-reserve-balance)
        (> proposed-settlement-amount available-reserve-balance)))
 
+(defn settlement-batch-exceeds-available-reserve-balance-checkable?
+  "Are both sides of `settlement-batch-exceeds-available-reserve-balance?` actually recorded?
+
+  That predicate answers only `over` / `not over`, and its
+  `(and (number? ...) (number? ...) ...)` guard made every un-recorded
+  case fall through as `not over` -- an entity missing either figure
+  passed the limit check silently. Callers must ask this first:
+  un-checkable is not within limits."
+  [{:keys [proposed-settlement-amount available-reserve-balance]}]
+  (boolean (and (number? proposed-settlement-amount) (number? available-reserve-balance))))
+
 (defn register-reserve-account-opening
   "Validate + construct the RESERVE-ACCOUNT-OPENING registration
   DRAFT -- the central bank's own act of opening a real reserve
