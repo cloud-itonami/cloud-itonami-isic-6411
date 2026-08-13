@@ -272,6 +272,56 @@
        :retained (when (= :approval-granted (:t f))
                    (some approver-in (registers-for db o s)))})))
 
+(defn- cross-reference-note
+  "The `cloud-itonami-isic-8291` cross-reference sentence is only
+  emitted if that hold is ACTUALLY in this run's ledger. If the
+  cross-reference stops finding the correspondent bank's sanctions hit,
+  the claim disappears with it instead of describing a hold the page no
+  longer shows (member-4's local flag would keep the RULE row alive, so
+  the rule count alone cannot be trusted to notice)."
+  [ledger member-id]
+  (when (some (fn [f]
+                (and (= :governor-hold (:t f))
+                     (= member-id (:subject f))
+                     (some #{:correspondent-due-diligence-unresolved} (:basis f))))
+              ledger)
+    (str " The <code>" (esc member-id) "</code> due-diligence hold was produced by an actual cross-reference "
+         "into <code>cloud-itonami-isic-8291</code>, whose own DisclosureGovernor escalated the correspondent "
+         "bank's sanctions hit to ITS OWN reviewer — a pending review, which this domain's two-valued "
+         "vocabulary must treat as unresolved rather than as a clear.")))
+
+(defn- approver-disclosure
+  "The attribution sentence, DERIVED from the trail this run actually
+  produced rather than stated as prose. Which registers keep the
+  approver is a property of `reserve.store/commit-record!`, not of this
+  page: the actuation branches re-mint their record from the member id
+  and jurisdiction and never read `:payload`, while `:account/set` and
+  `:duediligence/set` persist the payload whole. If that is changed,
+  this sentence changes with it -- a hard-coded claim here would have
+  become a lie the moment someone fixed the store."
+  [trail]
+  (let [granted (filter #(= :approval-granted (:outcome %)) trail)
+        ops (fn [xs] (str/join ", " (map #(code* %) (distinct (map :op xs)))))
+        kept (filter :retained granted)
+        lost (remove :retained granted)]
+    (cond
+      (empty? granted)
+      "No approval was granted in this run, so there is nothing to attribute."
+
+      (empty? lost)
+      (str "Measured on this run: the approver survived on every register written by "
+           (ops kept) ".")
+
+      (empty? kept)
+      (str "Measured on this run: the approver was dropped by every register written by "
+           (ops lost) " — it exists only on the audit fact.")
+
+      :else
+      (str "Measured on this run: the approver survived on the payload-backed registers written by "
+           (ops kept) ", and was dropped by " (ops lost)
+           " — those records are re-minted by <code>reserve.registry</code> from the member id and "
+           "jurisdiction alone, so the <code>:payload</code> carrying <code>approved-by</code> is never read."))))
+
 ;; ----------------------------- rendering -----------------------------
 
 (defn- last-fact-for [ledger member-id]
@@ -465,10 +515,8 @@
       (str "Grouped out of the run's real <code>:governor-hold</code> facts. "
            "A HARD violation is un-overridable: it never reaches a human approver at all, "
            "which the build verifies structurally (no <code>:approval-requested</code> in any held run's audit) "
-           "rather than claiming here. The member-6 due-diligence hold was produced by an actual cross-reference "
-           "into <code>cloud-itonami-isic-8291</code>, whose own DisclosureGovernor escalated the correspondent "
-           "bank's sanctions hit to ITS OWN reviewer — a pending review, which this domain's two-valued "
-           "vocabulary must treat as unresolved rather than as a clear.")
+           "rather than claiming here."
+           (cross-reference-note ledger "member-6"))
       ["Rule" "Times fired" "Members" "Detail (from the governor)"]
       (rows (map hard-check-row groups)))
 
@@ -489,8 +537,7 @@
            "at render time by looking for an <code>approved-by</code> key in the registers that op writes. "
            "It is derived, not declared: if the store is later changed to keep the approver on a register it "
            "currently drops, this column starts saying <em>retained</em> without anyone editing this page. "
-           "Today the approver survives on the payload-backed registers and is dropped by both actuations, "
-           "whose records are re-minted by <code>reserve.registry</code> from the member id and jurisdiction alone.")
+           (approver-disclosure trail))
       ["Op" "Member" "Decision" "Decided by (audit fact)" "Store register inspected" "Approver in the record?"]
       (rows (map approval-row trail)))
 
@@ -550,6 +597,20 @@
       (when-not (contains? rules rule)
         (throw (ex-info "render-html: HARD-check row has no backing ledger fact"
                         {:rule rule}))))
+    ;; invariant 5 -- the SOFT gate must have shown BOTH of its outcomes.
+    ;; Without this floor an empty approval trail renders as a legitimate-
+    ;; looking (but empty) table, and the derived attribution sentence
+    ;; degrades to "nothing to attribute" -- silence that reads like a pass.
+    (let [trail (approval-trail db runs)
+          outcomes (frequencies (map :outcome trail))]
+      (println "APPROVALS-GRANTED\t" (get outcomes :approval-granted 0))
+      (println "APPROVALS-REJECTED\t" (get outcomes :approval-rejected 0))
+      (when (zero? (get outcomes :approval-granted 0))
+        (throw (ex-info "render-html: no approval was GRANTED -- the approval trail and the approver-attribution probe would both be vacuous"
+                        {:trail (count trail)})))
+      (when (zero? (get outcomes :approval-rejected 0))
+        (throw (ex-info "render-html: no approval was REJECTED -- the SOFT gate's other outcome was never demonstrated"
+                        {:trail (count trail)}))))
     {:holds (count holds) :rules (vec (sort-by str rules))}))
 
 (defn -main [& args]

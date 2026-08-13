@@ -2510,7 +2510,7 @@ img,svg { max-width: 100%; height: auto; }</style></head><body>
   </section>
   <section class="card">
     <h2>HARD governor holds fired by this run (8 holds, 7 distinct rules)</h2>
-    <p class="muted">Grouped out of the run's real <code>:governor-hold</code> facts. A HARD violation is un-overridable: it never reaches a human approver at all, which the build verifies structurally (no <code>:approval-requested</code> in any held run's audit) rather than claiming here. The member-6 due-diligence hold was produced by an actual cross-reference into <code>cloud-itonami-isic-8291</code>, whose own DisclosureGovernor escalated the correspondent bank's sanctions hit to ITS OWN reviewer — a pending review, which this domain's two-valued vocabulary must treat as unresolved rather than as a clear.</p>
+    <p class="muted">Grouped out of the run's real <code>:governor-hold</code> facts. A HARD violation is un-overridable: it never reaches a human approver at all, which the build verifies structurally (no <code>:approval-requested</code> in any held run's audit) rather than claiming here. The <code>member-6</code> due-diligence hold was produced by an actual cross-reference into <code>cloud-itonami-isic-8291</code>, whose own DisclosureGovernor escalated the correspondent bank's sanctions hit to ITS OWN reviewer — a pending review, which this domain's two-valued vocabulary must treat as unresolved rather than as a clear.</p>
     <table>
       <thead><tr><th>Rule</th><th>Times fired</th><th>Members</th><th>Detail (from the governor)</th></tr></thead>
       <tbody>
@@ -2538,7 +2538,7 @@ img,svg { max-width: 100%; height: auto; }</style></head><body>
   </section>
   <section class="card">
     <h2>Human approval trail — and what the store actually kept</h2>
-    <p class="muted">Left half is the run's own audit fact; the right-most column is read back OUT of the store at render time by looking for an <code>approved-by</code> key in the registers that op writes. It is derived, not declared: if the store is later changed to keep the approver on a register it currently drops, this column starts saying <em>retained</em> without anyone editing this page. Today the approver survives on the payload-backed registers and is dropped by both actuations, whose records are re-minted by <code>reserve.registry</code> from the member id and jurisdiction alone.</p>
+    <p class="muted">Left half is the run's own audit fact; the right-most column is read back OUT of the store at render time by looking for an <code>approved-by</code> key in the registers that op writes. It is derived, not declared: if the store is later changed to keep the approver on a register it currently drops, this column starts saying <em>retained</em> without anyone editing this page. Measured on this run: the approver survived on the payload-backed registers written by <code>:account/verify</code>, <code>:duediligence/screen</code>, and was dropped by <code>:actuation/open-reserve-account</code>, <code>:actuation/release-settlement-batch</code> — those records are re-minted by <code>reserve.registry</code> from the member id and jurisdiction alone, so the <code>:payload</code> carrying <code>approved-by</code> is never read.</p>
     <table>
       <thead><tr><th>Op</th><th>Member</th><th>Decision</th><th>Decided by (audit fact)</th><th>Store register inspected</th><th>Approver in the record?</th></tr></thead>
       <tbody>
