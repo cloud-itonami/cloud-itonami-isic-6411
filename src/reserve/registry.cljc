@@ -65,7 +65,7 @@
   or releasing the settlement batch itself (that is `reserve.
   operation`'s `:actuation/open-reserve-account`/`:actuation/release-
   settlement-batch`, always human-gated -- see README `Actuation`)."
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 (defn- unsigned-certificate
   "Every certificate this actor produces is UNSIGNED -- signature is the
@@ -129,7 +129,7 @@
     (throw (ex-info "reserve-account-opening: jurisdiction required" {})))
   (when (< sequence 0)
     (throw (ex-info "reserve-account-opening: sequence must be >= 0" {})))
-  (let [account-number (str (str/upper-case jurisdiction) "-RSV-" (zero-pad sequence 6))
+  (let [account-number (str (str/upper jurisdiction) "-RSV-" (zero-pad sequence 6))
         record {"record_id" account-number
                 "kind" "reserve-account-opening-draft"
                 "member_id" member-id
@@ -154,7 +154,7 @@
     (throw (ex-info "settlement-batch-release: jurisdiction required" {})))
   (when (< sequence 0)
     (throw (ex-info "settlement-batch-release: sequence must be >= 0" {})))
-  (let [batch-number (str (str/upper-case jurisdiction) "-STL-" (zero-pad sequence 6))
+  (let [batch-number (str (str/upper jurisdiction) "-STL-" (zero-pad sequence 6))
         record {"record_id" batch-number
                 "kind" "settlement-batch-release-draft"
                 "member_id" member-id
