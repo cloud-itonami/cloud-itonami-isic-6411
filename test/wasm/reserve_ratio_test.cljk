@@ -1,7 +1,7 @@
 (ns wasm.reserve-ratio-test
   "Hosts wasm/reserve_ratio.wasm (compiled from wasm/reserve_ratio.kotoba,
   see wasm/README.md) via kototama.tender -- proves reserve.registry's
-  reserve-ratio-insufficient? check (src/reserve/registry.cljc) runs as a
+  reserve-ratio-insufficient? check (src/reserve/registry.cljk) runs as a
   real WASM guest, not just as JVM Clojure.
 
   ABI: main is 0-arity (kotoba wasm emit rejects a parameterized main --
