@@ -1,5 +1,5 @@
 (ns reserve.sim
-  "Demo driver -- `clojure -M:dev:run`. Walks a clean member bank
+  "Demo driver -- `kbb -M:dev:run`. Walks a clean member bank
   through intake -> account verification -> correspondent-banking
   due-diligence screening -> reserve-account-opening proposal (always
   escalates) -> human approval -> commit, then through settlement-
