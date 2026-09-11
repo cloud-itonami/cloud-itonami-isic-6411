@@ -3,12 +3,12 @@
 `reserve_ratio.kotoba` is a port of `reserve.registry/reserve-ratio-
 insufficient?`'s pure ground-truth comparison — does a member bank's own
 recorded reserve ratio fall short of its own recorded minimum-required
-reserve ratio? (see `src/reserve/registry.cljc` lines ~85-94, and its
-independent recompute in `src/reserve/governor.cljc` lines ~195-206 and
-the integer-coded safety kernel in `src/reserve/kernels/gate.cljc` lines
+reserve ratio? (see `src/reserve/registry.cljk` lines ~85-94, and its
+independent recompute in `src/reserve/governor.cljk` lines ~195-206 and
+the integer-coded safety kernel in `src/reserve/kernels/gate.cljk` lines
 ~93-102) — into the minimal `.kotoba` language subset, compiled to a real
 WASM module via `kotoba wasm emit`, and hosted via `kototama.tender`
-(`test/wasm/reserve_ratio_test.clj`).
+(`test/wasm/reserve_ratio_test.cljk`).
 
 This follows the same `kotoba wasm emit` → `kototama.tender` pattern
 already proven by `cloud-itonami-isic-6492`'s `wasm/affordability.kotoba`,
