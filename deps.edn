@@ -45,10 +45,12 @@
   :physics {:main-opts ["-m" "kotoba.robotics.process.probe"]}
   ;; kbb -M:physai-test -> test/'s .cljk on kbb's runner (the bot's test count;
   ;; a .kotoba vertical's own :test may refuse kbb on purpose).
-  ;; test/ is left out here: test/reserve/corporate_intel_test needs dossier.store from
-  ;; cloud-itonami-isic-8291, which is a .kotoba namespace kbb cannot load (the JVM :test
-  ;; alias still runs all of test/).
-  :physai-test {:extra-paths ["test-physai"] :main-opts ["-m" "cognitect.test-runner"]}
+  ;; -n: the portable namespaces of reserve.portable-cljs-test-runner except
+  ;; reserve.corporate-intel-test, which needs dossier.store from cloud-itonami-isic-8291 -- a
+  ;; .kotoba namespace kbb cannot load (the JVM :test alias still runs all of test/).
+  :physai-test {:extra-paths ["test" "test-physai"]
+                :main-opts ["-m" "cognitect.test-runner" "-d" "test/reserve" "-d" "test-physai"
+                            "-n" "reserve.facts-test" "-n" "reserve.governor-contract-test" "-n" "reserve.kernels.gate-test" "-n" "reserve.phase-test" "-n" "reserve.registry-test" "-n" "reserve.store-contract-test" "-n" "reserve.physics-spec-test"]}
 ;; offline workspace dev -- pin transitive langchain to local checkout
   :dev {:override-deps
         {io.github.kotoba-lang/langchain
