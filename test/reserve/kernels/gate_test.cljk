@@ -15,7 +15,7 @@
      numeric ground-truth boundaries (reserve-ratio minimum /
      settlement-batch ceiling), exercised through the real
      `reserve.governor/check` façade."
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.test :refer [deftest is testing]]
             [reserve.facts :as facts]
             [reserve.governor :as governor]
             [reserve.kernels.gate :as gate]

@@ -3,7 +3,7 @@
   regress on: `:actuation/open-reserve-account`/`:actuation/release-
   settlement-batch` must NEVER be a member of any phase's `:auto`
   set."
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.test :refer [deftest is testing]]
             [reserve.phase :as phase]))
 
 (deftest open-reserve-account-never-auto-at-any-phase
