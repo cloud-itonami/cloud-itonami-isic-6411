@@ -1,5 +1,5 @@
 (ns reserve.registry-test
-  (:require [clojure.test :refer [deftest is]]
+  (:require [kotoba.test :refer [deftest is]]
             [reserve.registry :as r]))
 
 ;; ----------------------------- reserve-ratio-insufficient? -----------------------------

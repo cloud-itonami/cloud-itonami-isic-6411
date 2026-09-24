@@ -33,7 +33,7 @@
   conservative than the 3-way repos, the same shape
   `cloud-itonami-isic-6419`'s/`6420`'s own binary-collapse integration
   already establishes."
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.test :refer [deftest is testing]]
             [langgraph.graph :as g]
             [reserve.store :as store]
             [reserve.operation :as op]
