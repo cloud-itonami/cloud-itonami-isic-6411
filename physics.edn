@@ -1,0 +1,35 @@
+;; What this vertical's robot physically does, declared for
+;; kotoba.robotics.process (kotoba-lang/robotics). `kbb -M:dev:physics` runs it.
+;;
+;; README "Robotics premise": for central banking (ISIC 6411) a secure
+;; vault-servicing and currency-handling robot manages physical reserve-
+;; currency custody, gated by the independent Central Bank Reserve
+;; Governor. Physical work modelled here: the robot feeding sealed banknote
+;; boxes from the vault cage into the sorting machine, and the fire
+;; resistance of the vault wall that protects the paper currency it
+;; stores.
+;;
+;; Every number without a cited source is marked `estimate` in its :basis.
+;; Replacing an estimate with a sourced value is this bot's growth work.
+{:physics/schema "itonami.physical-ai.spec.v1"
+ :repo "cloud-itonami/cloud-itonami-isic-6411"
+ :cases
+ [{:id :banknote-box-to-sorter
+   :kind :manipulator
+   :procedure "vault robot lifts a sealed box of banknote bundles from the lower shelf of the vault cage onto the sorting machine's feed table"
+   :params {:l1-m 0.70 :l2-m 0.60 :m1-kg 10.0 :m2-kg 7.0
+            :from [0.75 -0.35] :to [0.40 0.55] :duration-s 2.5 :steps 500}
+   :sweep {:param :payload-kg :values [5.0 10.0 15.0 20.0 25.0]}
+   :quantity :peak-tau1-nm
+   :limit {:max 250.0 :basis "estimate: continuous shoulder torque of a ~15 kg-payload collaborative arm class"}
+   :boundary {:lo 1.0 :hi 80.0}}
+  {:id :vault-wall-fire
+   :kind :thermal
+   :procedure "reinforced-concrete vault wall exposed on its outer face to the ISO 834 standard fire; the inner face must stay below the temperature at which stored paper currency is damaged"
+   :params {:conductivity-w-mk 1.6 :density-kg-m3 2400.0 :specific-heat-j-kgk 1000.0
+            :t0-c 20.0 :hot-curve :iso-834 :h-front-w-m2k 25.0 :t-back-ambient-c 20.0 :h-back-w-m2k 9.0
+            :threshold-c 150.0 :duration-s 28800.0 :nodes 21}
+   :sweep {:param :thickness-m :values [0.10 0.125 0.15 0.175 0.20]}
+   :quantity :time-to-threshold-s
+   :limit {:min 7200.0 :basis "estimate: 2 hours before the inner face reaches 150 C, a working margin below the ~170 C at which paper is commonly taken to char (vault rating not yet sourced)"}
+   :boundary {:lo 0.08 :hi 0.20}}]}
