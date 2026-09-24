@@ -16,9 +16,9 @@ README の Robotics premise: 金庫の保守と現金取扱いを行うロボッ
 | `:vault-wall-fire` | thermal | 鉄筋コンクリートの金庫壁が外面から ISO 834 標準火災を受ける（壁厚を掃引、8 h） | 内面が 150 °C に達する時間 | ≥ 7200 s（estimate） |
 
 測定の入口: `kbb -M:dev:physics`。全 run が数値を返さなければ exit 2 = **測れなかった**（「異常なし」ではない）。
-test: `kbb -M:dev:physai-test`（`test-physai/reserve/physics_spec_test.cljk` が physics.edn の妥当性と全 run の計測を検査する: 2 test / 5 assertion）。
-この alias は test/ を含めない: `test/reserve/corporate_intel_test` が cloud-itonami-isic-8291 の `dossier.store` を要求し、それは kbb が読めない `.kotoba` の namespace だから。
-repo 自身の test/ は JVM の `:test` alias（fleet gate）が走らせる。この bot の test 数は physics の test だけを数える。
+test: `kbb -M:dev:physai-test`（`test-physai/reserve/physics_spec_test.cljk` が physics.edn の妥当性と全 run の計測を検査する。repo 自身の portable な test 6 namespace も同じ runner で走る: 54 test / 641 assertion）。
+この alias は `reserve.portable-cljs-test-runner` の namespace を `-n` で列挙し、`reserve.corporate-intel-test` だけを外している: それは cloud-itonami-isic-8291 の `dossier.store` を要求し、kbb が読めない `.kotoba` の namespace だから。
+JVM の `:test` alias（fleet gate）は test/ 全体を走らせる。
 
 ## 測って分かったこと・限界（成長の第一候補）
 
